@@ -3,6 +3,7 @@
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
 use Symfony\Component\OptionsResolver\Exception\UndefinedOptionsException;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class MergeRequests extends AbstractApi
 {
@@ -36,62 +37,38 @@ class MergeRequests extends AbstractApi
      */
     public function all($project_id, array $parameters = [])
     {
-        $resolver = $this->createOptionsResolver();
-        $datetimeNormalizer = function (Options $resolver, \DateTimeInterface $value) {
-            return $value->format('c');
-        };
-        $resolver->setDefined('iids')
-            ->setAllowedTypes('iids', 'array')
-            ->setAllowedValues('iids', function (array $value) {
-                return count($value) == count(array_filter($value, 'is_int'));
-            })
-        ;
-        $resolver->setDefined('state')
-            ->setAllowedValues('state', ['all', 'opened', 'merged', 'closed'])
-        ;
-        $resolver->setDefined('order_by')
-            ->setAllowedValues('order_by', ['created_at', 'updated_at'])
-        ;
-        $resolver->setDefined('sort')
-            ->setAllowedValues('sort', ['asc', 'desc'])
-        ;
-        $resolver->setDefined('milestone');
-        $resolver->setDefined('view')
-            ->setAllowedValues('view', ['simple'])
-        ;
-        $resolver->setDefined('labels');
-        $resolver->setDefined('created_after')
-            ->setAllowedTypes('created_after', \DateTimeInterface::class)
-            ->setNormalizer('created_after', $datetimeNormalizer)
-        ;
-        $resolver->setDefined('created_before')
-            ->setAllowedTypes('created_before', \DateTimeInterface::class)
-            ->setNormalizer('created_before', $datetimeNormalizer)
-        ;
-
-        $resolver->setDefined('updated_after')
-            ->setAllowedTypes('updated_after', \DateTimeInterface::class)
-            ->setNormalizer('updated_after', $datetimeNormalizer)
-        ;
-        $resolver->setDefined('updated_before')
-            ->setAllowedTypes('updated_before', \DateTimeInterface::class)
-            ->setNormalizer('updated_before', $datetimeNormalizer)
-        ;
-
-        $resolver->setDefined('scope')
-            ->setAllowedValues('scope', ['created_by_me', 'assigned_to_me', 'all'])
-        ;
-        $resolver->setDefined('author_id')
-            ->setAllowedTypes('author_id', 'integer');
-
-        $resolver->setDefined('assignee_id')
-            ->setAllowedTypes('assignee_id', 'integer');
-
-        $resolver->setDefined('search');
-        $resolver->setDefined('source_branch');
-        $resolver->setDefined('target_branch');
+        $resolver = $this->createGetListOptionsResolver();
 
         return $this->get($this->getProjectPath($project_id, 'merge_requests'), $resolver->resolve($parameters));
+    }
+
+    /**
+     * @param array $parameters {
+     *
+     *     @var int[]              $iids           Return the request having the given iid.
+     *     @var string             $state          Return all merge requests or just those that are opened, closed, or
+     *                                             merged.
+     *     @var string             $order_by       Return requests ordered by created_at or updated_at fields. Default
+     *                                             is created_at.
+     *     @var string             $sort           Return requests sorted in asc or desc order. Default is desc.
+     *     @var string             $milestone      Return merge requests for a specific milestone.
+     *     @var string             $view           If simple, returns the iid, URL, title, description, and basic state
+     *                                             of merge request.
+     *     @var string             $labels         Return merge requests matching a comma separated list of labels.
+     *     @var \DateTimeInterface $created_after  Return merge requests created after the given time (inclusive).
+     *     @var \DateTimeInterface $created_before Return merge requests created before the given time (inclusive).
+     * }
+     *
+     * @throws UndefinedOptionsException If an option name is undefined.
+     * @throws InvalidOptionsException   If an option doesn't fulfill the specified validation rules.
+     *
+     * @return mixed
+     */
+    public function search(array $parameters)
+    {
+        $resolver = $this->createGetListOptionsResolver();
+
+        return $this->get('merge_requests', $resolver->resolve($parameters));
     }
 
     /**
@@ -367,5 +344,68 @@ class MergeRequests extends AbstractApi
     public function awardEmoji($project_id, $mr_iid)
     {
         return $this->get($this->getProjectPath($project_id, 'merge_requests/'.$this->encodePath($mr_iid).'/award_emoji'));
+    }
+
+    /**
+     * @return OptionsResolver
+     */
+    private function createGetListOptionsResolver()
+    {
+        $resolver = $this->createOptionsResolver();
+        $datetimeNormalizer = function (Options $resolver, \DateTimeInterface $value) {
+            return $value->format('c');
+        };
+        $resolver->setDefined('iids')
+            ->setAllowedTypes('iids', 'array')
+            ->setAllowedValues('iids', function (array $value) {
+                return count($value) == count(array_filter($value, 'is_int'));
+            })
+        ;
+        $resolver->setDefined('state')
+            ->setAllowedValues('state', ['all', 'opened', 'merged', 'closed'])
+        ;
+        $resolver->setDefined('order_by')
+            ->setAllowedValues('order_by', ['created_at', 'updated_at'])
+        ;
+        $resolver->setDefined('sort')
+            ->setAllowedValues('sort', ['asc', 'desc'])
+        ;
+        $resolver->setDefined('milestone');
+        $resolver->setDefined('view')
+            ->setAllowedValues('view', ['simple'])
+        ;
+        $resolver->setDefined('labels');
+        $resolver->setDefined('created_after')
+            ->setAllowedTypes('created_after', \DateTimeInterface::class)
+            ->setNormalizer('created_after', $datetimeNormalizer)
+        ;
+        $resolver->setDefined('created_before')
+            ->setAllowedTypes('created_before', \DateTimeInterface::class)
+            ->setNormalizer('created_before', $datetimeNormalizer)
+        ;
+
+        $resolver->setDefined('updated_after')
+            ->setAllowedTypes('updated_after', \DateTimeInterface::class)
+            ->setNormalizer('updated_after', $datetimeNormalizer)
+        ;
+        $resolver->setDefined('updated_before')
+            ->setAllowedTypes('updated_before', \DateTimeInterface::class)
+            ->setNormalizer('updated_before', $datetimeNormalizer)
+        ;
+
+        $resolver->setDefined('scope')
+            ->setAllowedValues('scope', ['created_by_me', 'assigned_to_me', 'all'])
+        ;
+        $resolver->setDefined('author_id')
+            ->setAllowedTypes('author_id', 'integer');
+
+        $resolver->setDefined('assignee_id')
+            ->setAllowedTypes('assignee_id', 'integer');
+
+        $resolver->setDefined('search');
+        $resolver->setDefined('source_branch');
+        $resolver->setDefined('target_branch');
+
+        return $resolver;
     }
 }
