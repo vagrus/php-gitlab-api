@@ -20,6 +20,7 @@ use Http\Discovery\UriFactoryDiscovery;
  *
  * @author Matt Humphrey <matt@m4tt.co>
  *
+ * @property-read \Gitlab\Api\Commits $commits
  * @property-read \Gitlab\Api\Groups $groups
  * @property-read \Gitlab\Api\Issues $issues
  * @property-read \Gitlab\Api\Jobs $jobs
@@ -306,6 +307,14 @@ class Client
     }
 
     /**
+     * @return Api\Commits
+     */
+    public function commits()
+    {
+        return new Api\Commits($this);
+    }
+
+    /**
      * @param string $name
      *
      * @return AbstractApi|mixed
@@ -314,6 +323,9 @@ class Client
     public function api($name)
     {
         switch ($name) {
+
+            case 'commits':
+                return $this->commits();
 
             case 'deploy_keys':
                 return $this->deployKeys();

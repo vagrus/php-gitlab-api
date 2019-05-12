@@ -123,9 +123,6 @@ class MergeRequestsTest extends TestCase
                 'title' => 'Merge Request',
                 'target_branch' => 'master',
                 'source_branch' => 'develop',
-                'description' => null,
-                'assignee_id' => null,
-                'target_project_id' => null
             ))
             ->will($this->returnValue($expectedArray))
         ;
@@ -154,7 +151,13 @@ class MergeRequestsTest extends TestCase
             ->will($this->returnValue($expectedArray))
         ;
 
-        $this->assertEquals($expectedArray, $api->create(1, 'develop', 'master', 'Merge Request', 6, 20, 'Some changes'));
+        $extraParams = [
+            'assignee_id' => 6,
+            'target_project_id' => 20,
+            'description' => 'Some changes',
+        ];
+
+        $this->assertEquals($expectedArray, $api->create(1, 'develop', 'master', 'Merge Request', $extraParams));
     }
 
     /**
